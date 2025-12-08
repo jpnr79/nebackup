@@ -113,7 +113,7 @@ function plugin_version_nebackup() {
         'author' => 'Javier Samaniego',
         'license' => 'AGPLv3+',
         'homepage' => 'https://github.com/jsamaniegog/nebackup',
-        'minGlpiVersion' => '9.4');
+        'requirements' => ['glpi' => ['min' => '11.0', 'max' => '12.0']]);
 }
 
 /**
