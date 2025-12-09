@@ -73,13 +73,25 @@ class PluginNebackupBackup extends CommonDBTM {
         if ($use_fusioninventory) {
             $sql .= " AND pnn.networkequipments_id = n.id ";
         }
-        $sql .= "ORDER BY n.entities_id ASC";
-
-        $result = $DB->query($sql);
+        
+        $result = $DB->request([
+            'SELECT' => ['n.id', 'n.name', 'n.entities_id', 'nee.username', 'nee.password', 'nee.protocol', 'nee.server'],
+            'FROM' => 'glpi_networkequipments AS n',
+            'INNER JOIN' => [
+                'glpi_plugin_nebackup_entities AS nee' => [
+                    'ON' => [
+                        'n' => 'entities_id',
+                        'nee' => 'entities_id'
+                    ]
+                ]
+            ],
+            'WHERE' => $where,
+            'ORDER' => ['n.entities_id ASC']
+        ]);
 
         $buffer = array();
 
-        while ($error = $result->fetch_assoc()) {
+        foreach ($result as $error) {
 
             // se envía notificación por entidad
             if (!empty($buffer) and $error['entities_id'] != $previous_entity) {

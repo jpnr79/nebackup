@@ -183,10 +183,13 @@ class PluginNebackupEntity extends CommonDBTM {
     static function getEntityData($entities_id) {
         global $DB;
 
-        $query = "SELECT * FROM glpi_plugin_nebackup_entities WHERE entities_id = $entities_id";
+        $result = $DB->request([
+            'FROM' => 'glpi_plugin_nebackup_entities',
+            'WHERE' => ['entities_id' => $entities_id]
+        ]);
 
-        if ($result = $DB->query($query)) {
-            return $result->fetch_assoc();
+        if ($result->count() > 0) {
+            return $result->current();
         }
 
         return false;
@@ -301,21 +304,33 @@ class PluginNebackupEntity extends CommonDBTM {
         // string to return
         $sub_entities_ids = "";
 
-        $query = "SELECT nee.is_recursive, e.sons_cache, e.entities_id parent ";
-        $query .= "FROM glpi_plugin_nebackup_entities nee, glpi_entities e ";
-        $query .= "WHERE nee.id = " . $entity_id . " and nee.entities_id = e.id ";
+        $result = $DB->request([
+            'SELECT' => ['nee.is_recursive', 'e.sons_cache', 'e.id AS parent'],
+            'FROM' => 'glpi_plugin_nebackup_entities AS nee',
+            'INNER JOIN' => [
+                'glpi_entities AS e' => [
+                    'ON' => [
+                        'nee' => 'entities_id',
+                        'e' => 'id'
+                    ]
+                ]
+            ],
+            'WHERE' => ['nee.id' => $entity_id]
+        ]);
 
-        if ($result = $DB->query($query)) {
+        if ($result->count() > 0) {
 
-            $result = $result->fetch_assoc();
+            $row = $result->current();
 
-            // if si recursive return the sons ids
-            if ($result['is_recursive'] == 1) {
+            // if recursive return the sons ids
+            if ($row['is_recursive'] == 1) {
                 // get sons_cache and generate an array
-                $result = json_decode($result['sons_cache'], true);
+                $result_array = json_decode($row['sons_cache'], true);
 
-                foreach ($result as $v) {
-                    $sub_entities_ids .= ",$v";
+                if (is_array($result_array)) {
+                    foreach ($result_array as $v) {
+                        $sub_entities_ids .= ",$v";
+                    }
                 }
             }
         }

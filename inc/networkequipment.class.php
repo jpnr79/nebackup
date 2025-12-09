@@ -151,17 +151,31 @@ class PluginNebackupNetworkEquipment extends CommonDBTM {
             false;
         
         // first check if we have a record and if type and manufacturer match
-        $query = "SELECT nee.username, nee.password, nee.protocol, nee.server, e.name entity_name, ";
-        $query .= "(SELECT REPLACE(type, '_manufacturers_id', '')";
-        
-        $query .= " FROM glpi_plugin_nebackup_configs";
-        $query .= " WHERE type like '%_manufacturers_id' AND value = " . $datos->fields['manufacturers_id'] . ") as manufacturer ";
-        $query .= "FROM glpi_plugin_nebackup_entities nee, glpi_entities e ";
-        
-        $query .= "WHERE nee.entities_id = e.id AND nee.entities_id = " . $datos->fields['entities_id'];
-        
-        if ($result = $DB->query($query)) {
-            $result = $result->fetch_assoc();
+        $result = $DB->request([
+            'SELECT' => [
+                'nee.username',
+                'nee.password',
+                'nee.protocol',
+                'nee.server',
+                'e.name AS entity_name',
+                new \QueryExpression("(SELECT REPLACE(type, '_manufacturers_id', '') FROM glpi_plugin_nebackup_configs WHERE type LIKE '%_manufacturers_id' AND value = " . $datos->fields['manufacturers_id'] . ") AS manufacturer")
+            ],
+            'FROM' => 'glpi_plugin_nebackup_entities AS nee',
+            'INNER JOIN' => [
+                'glpi_entities AS e' => [
+                    'ON' => [
+                        'nee' => 'entities_id',
+                        'e' => 'id'
+                    ]
+                ]
+            ],
+            'WHERE' => [
+                'nee.entities_id' => $datos->fields['entities_id']
+            ]
+        ]);
+
+        if ($result->count() > 0) {
+            $result = $result->current();
 
             if (!$result) {
                 echo '<b style="color:red;">' . __('No backup configured for this entity.', 'nebackup') . '</b>';
@@ -176,8 +190,9 @@ class PluginNebackupNetworkEquipment extends CommonDBTM {
         if ($use_fusioninventory and $manufacturer !== 'hpprocurve') {
             $this->showFormSNMPAuth($datos);
             
-//            $query = "SELECT pfc.username as fi_username, pfc.auth_passphrase as fi_password ";
-//            $query .= "FROM glpi_networkequipments n, glpi_plugin_nebackup_networkequipments pnn,";
+//            $result = $DB->request([
+//                'SELECT' => ['pfc.username AS fi_username', 'pfc.auth_passphrase AS fi_password'],
+//                'FROM' => 'glpi_networkequipments AS n',
 //            $query .= " glpi_plugin_fusioninventory_configsecurities pfc ";
 //            $query .= "WHERE n.id = " . $datos->fields['id'] . " AND n.id = pnn.networkequipments_id";
 //            $query .= " AND pnn.plugin_fusioninventory_configsecurities_id = pfc.id ";
@@ -417,11 +432,13 @@ class PluginNebackupNetworkEquipment extends CommonDBTM {
      * is actived.
      */
     private function showFormAuthTelnet(CommonGLPI $item) {
-        global $CFG_GLPI,$DB;
+        global $CFG_GLPI, $DB;
 
-        $sql = "SELECT telnet_username, telnet_password ";
-        $sql .= "FROM glpi_plugin_nebackup_networkequipments ";
-        $sql .= "WHERE networkequipments_id = " . $item->fields['id'];
+        $result = $DB->request([
+            'SELECT' => ['telnet_username', 'telnet_password'],
+            'FROM' => 'glpi_plugin_nebackup_networkequipments',
+            'WHERE' => ['networkequipments_id' => $item->fields['id']]
+        ]);
 
         if ($result = $DB->query($sql)) {
             $result = $DB->fetch_assoc($result);
@@ -511,29 +528,29 @@ class PluginNebackupNetworkEquipment extends CommonDBTM {
     private function getSNMPAuth($networkequipments_id) {
         global $DB;
 
-        $sql = "SELECT plugin_fusioninventory_configsecurities_id FROM glpi_plugin_nebackup_networkequipments ";
-        $sql .= "WHERE networkequipments_id = $networkequipments_id ";
+        $result = $DB->request([
+            'SELECT' => ['plugin_fusioninventory_configsecurities_id'],
+            'FROM' => 'glpi_plugin_nebackup_networkequipments',
+            'WHERE' => ['networkequipments_id' => $networkequipments_id]
+        ]);
 
-        if ($result = $DB->query($sql)) {
-            $result = $DB->fetch_assoc($result);
-            return $result['plugin_fusioninventory_configsecurities_id'];
+        if ($result->count() > 0) {
+            $row = $result->current();
+            return $row['plugin_fusioninventory_configsecurities_id'];
         }
+        return null;
     }
 
     private function existsRecord($networkequipments_id) {
         global $DB;
         
-        $sql = "SELECT count(*) cuenta FROM glpi_plugin_nebackup_networkequipments ";
-        $sql .= "WHERE networkequipments_id = $networkequipments_id ";
+        $result = $DB->request([
+            'COUNT' => 'cpt',
+            'FROM' => 'glpi_plugin_nebackup_networkequipments',
+            'WHERE' => ['networkequipments_id' => $networkequipments_id]
+        ]);
 
-        if ($result = $DB->query($sql)) {
-            $result = $DB->fetch_assoc($result);
-            if ($result['cuenta'] != 0) {
-                return true;
-            }
-        }
-        
-        return false;
+        return $result->current()['cpt'] > 0;
     }
     
     /**
@@ -594,18 +611,21 @@ class PluginNebackupNetworkEquipment extends CommonDBTM {
         global $DB;
         
         if ($this->existsRecord($networkequipments_id)) {
-            $sql = "UPDATE glpi_plugin_nebackup_networkequipments ";
-            $sql .= "SET telnet_username = '" . $telnet_username . "', ";
-            $sql .= "telnet_password = '" . $telnet_password . "' ";
-            $sql .= "WHERE networkequipments_id = " . $networkequipments_id;
-            
+            $DB->update('glpi_plugin_nebackup_networkequipments', [
+                'telnet_username' => $telnet_username,
+                'telnet_password' => $telnet_password
+            ], [
+                'networkequipments_id' => $networkequipments_id
+            ]);
         } else {
-            $sql = "INSERT INTO glpi_plugin_nebackup_networkequipments";
-            $sql .= "(networkequipments_id, telnet_username, telnet_password) ";
-            $sql .= "VALUES($networkequipments_id, '$telnet_username', '$telnet_password')";
+            $DB->insert('glpi_plugin_nebackup_networkequipments', [
+                'networkequipments_id' => $networkequipments_id,
+                'telnet_username' => $telnet_username,
+                'telnet_password' => $telnet_password
+            ]);
         }
         
-        return $DB->query($sql);
+        return true;
     }
 
     /**
@@ -617,12 +637,14 @@ class PluginNebackupNetworkEquipment extends CommonDBTM {
     static public function getAuthTelnet($networkequipments_id) {
         global $DB;
         
-        $sql = "SELECT telnet_username, telnet_password ";
-        $sql .= "FROM glpi_plugin_nebackup_networkequipments ";
-        $sql .= "WHERE networkequipments_id = " . $networkequipments_id;
+        $result = $DB->request([
+            'SELECT' => ['telnet_username', 'telnet_password'],
+            'FROM' => 'glpi_plugin_nebackup_networkequipments',
+            'WHERE' => ['networkequipments_id' => $networkequipments_id]
+        ]);
             
-        if ($result = $DB->query($sql)) {
-            return $DB->fetch_assoc($result);
+        if ($result->count() > 0) {
+            return $result->current();
         }
         
         return false;

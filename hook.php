@@ -38,123 +38,67 @@ function plugin_change_profile_nebackup() {
 function plugin_nebackup_install() {
     global $DB;
 
-    // actualización si es la version 1.0.0
-    if (!$DB->tableExists("glpi_plugin_nebackup_config")) {
-        $DB->runFile(GLPI_ROOT . "/plugins/nebackup/sql/update-1.0.0.sql");
-    }
-
-
-    if (!$DB->tableExists("glpi_plugin_nebackup_entities")) {
-        // Création de la table config
-        $query = "CREATE TABLE `glpi_plugin_nebackup_entities` (
-        `id` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
-        `entities_id` int(11) NOT NULL UNIQUE,
-        `tftp_server` char(32) NOT NULL default '',
-        `tftp_passwd` char(32) NOT NULL default '',
-        `telnet_passwd` char(32) NOT NULL default '',
-        `is_recursive` tinyint(1) NOT NULL default 0
-        )ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
-        $DB->query($query) or die($DB->error());
-    }
-
-    // Création de la table uniquement lors de la première installation
-    if (!$DB->tableExists("glpi_plugin_nebackup_configs")) {
-        // Création de la table config
-        $query = "CREATE TABLE `glpi_plugin_nebackup_configs` (
-        `id` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
-        `type` varchar(32) NOT NULL default '' UNIQUE,
-        `value` varchar(32) NOT NULL default ''
-        )ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
-        $DB->query($query) or die($DB->error());
-
-        // ruta de configuración predeterminada para version >= 2.0.0
-        $DB->runFile(GLPI_ROOT . "/plugins/nebackup/sql/update-2.0.0.sql");
-
-        // Insertamos el ID de cisco en la configuración si es que existe algún registro.
-        $query = "SELECT id FROM `glpi_manufacturers` WHERE name like 'cisco%' ORDER BY id LIMIT 1";
-        $query2 = "SELECT id FROM `glpi_networkequipmenttypes` WHERE name like 'switch' ORDER BY id LIMIT 1";
-
-        if ($result = $DB->query($query) and $result2 = $DB->query($query2)) {
-
-            $row = $result->fetch_assoc();
-            $row2 = $result2->fetch_assoc();
-
-            $query = "INSERT INTO glpi_plugin_nebackup_configs(type, value) ";
-            $query .= "VALUES ('cisco_manufacturers_id', '" . $row['id'] . "')";
-            $query .= ", ('networkequipmenttype_id', '" . $row2['id'] . "')";
-            $res = $DB->query($query) or die($DB->error());
-
-            // add task for backup
-            if ($res) {
-                // need this include for version 0.90
-                include_once 'inc/config.class.php';
-
-                PluginNebackupConfig::setCronTask();
-            }
-        }
-    } else {
-        $cron = new CronTask();
-        if ($cron->getFromDBbyName("PluginNebackupBackup", "nebackup")) {
-            $cron->fields['mode'] = CronTask::MODE_EXTERNAL;
-            $cron->update($cron->fields);
-        }
-    }
-
-    // actualización version => 2.0.0
-    if (!$DB->tableExists("glpi_plugin_nebackup_configs")) {
-        $DB->runFile(GLPI_ROOT . "/plugins/nebackup/sql/update-2.0.0.sql");
-    }
-
-    // actualización version => 2.1.0
-    if (!$DB->tableExists("glpi_plugin_nebackup_logs")) {
-        $DB->runFile(GLPI_ROOT . "/plugins/nebackup/sql/update-2.1.0.sql");
-
-        $n_template = new NotificationTemplate();
-        if (!$n_template->find("name = 'NEBackup errors'")) {
-            $n_template->add(array(
-                'name' => 'NEBackup errors',
-                'itemtype' => 'PluginNebackupBackup'
-            ));
+    try {
+        // Création de la table entities
+        if (!$DB->tableExists("glpi_plugin_nebackup_entities")) {
+            $DB->doQueryOrDie("CREATE TABLE `glpi_plugin_nebackup_entities` (
+                `id` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+                `entities_id` BIGINT UNSIGNED NOT NULL UNIQUE,
+                `tftp_server` varchar(255) NOT NULL DEFAULT '',
+                `tftp_passwd` varchar(255) NOT NULL DEFAULT '',
+                `telnet_passwd` varchar(255) NOT NULL DEFAULT '',
+                `is_recursive` tinyint(1) NOT NULL DEFAULT 0
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", $DB->error());
         }
 
-        $n_template = array_values($n_template->find("name = 'NEBackup Errors'"));
-        $n_templatetranslations = new NotificationTemplateTranslation();
-        if (!$n_templatetranslations->find("notificationtemplates_id = " . $n_template[0]['id'])) {
-            $n_templatetranslations->add(array(
-                'notificationtemplates_id' => $n_template[0]['id'],
-                'subject' => getTemplateSubject("errors"),
-                'content_text' => getTemplateContent("errors"),
-                'content_html' => getTemplateContent("errors", true)
-            ));
+        // Création de la table configs
+        if (!$DB->tableExists("glpi_plugin_nebackup_configs")) {
+            $DB->doQueryOrDie("CREATE TABLE `glpi_plugin_nebackup_configs` (
+                `id` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+                `type` varchar(255) NOT NULL DEFAULT '' UNIQUE,
+                `value` longtext NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", $DB->error());
+
+            // Insert default configurations
+            $DB->insert('glpi_plugin_nebackup_configs', [
+                'type' => 'backup_path',
+                'value' => 'backup/{entity}'
+            ]);
+            $DB->insert('glpi_plugin_nebackup_configs', [
+                'type' => 'use_fusioninventory',
+                'value' => '0'
+            ]);
+            $DB->insert('glpi_plugin_nebackup_configs', [
+                'type' => 'timeout',
+                'value' => '60'
+            ]);
         }
 
-        $notification = new Notification();
-        if (!$notification->find("name = 'NEBackup errors'")) {
-            $notification->add(array(
-                'name' => 'NEBackup errors',
-                'entities_id' => '0',
-                'itemtype' => 'PluginNebackupBackup',
-                'event' => 'errors',
-                'mode' => 'mail',
-                'notificationtemplates_id' => $n_template[0]['id'],
-                'comment' => '',
-                'is_recursive' => 1,
-                'is_active' => 1
-            ));
+        // Création de la table logs
+        if (!$DB->tableExists("glpi_plugin_nebackup_logs")) {
+            $DB->doQueryOrDie("CREATE TABLE `glpi_plugin_nebackup_logs` (
+                `id` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+                `networkequipments_id` BIGINT UNSIGNED NOT NULL,
+                `date` TIMESTAMP NULL DEFAULT NULL,
+                `error` longtext NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", $DB->error());
         }
-    }
 
-    // actualización version => 2.1.3
-    if (!$DB->tableExists("glpi_plugin_nebackup_configs")) {
-        $DB->runFile(GLPI_ROOT . "/plugins/nebackup/sql/update-2.1.3.sql");
-    }
+        // Création de la table networkequipments
+        if (!$DB->tableExists("glpi_plugin_nebackup_networkequipments")) {
+            $DB->doQueryOrDie("CREATE TABLE `glpi_plugin_nebackup_networkequipments` (
+                `id` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+                `networkequipments_id` BIGINT UNSIGNED NOT NULL,
+                `plugin_fusioninventory_configsecurities_id` BIGINT UNSIGNED,
+                `created_at` TIMESTAMP NULL DEFAULT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", $DB->error());
+        }
 
-    // actualización version => 2.2.0
-    if (!$DB->tableExists("glpi_plugin_nebackup_entities")) {
-        $DB->runFile(GLPI_ROOT . "/plugins/nebackup/sql/update-2.2.0.sql");
+        return true;
+    } catch (Exception $e) {
+        error_log("NEBackup install error: " . $e->getMessage());
+        return false;
     }
-
-    return true;
 }
 
 /**
@@ -172,17 +116,20 @@ function plugin_nebackup_uninstall() {
     );
 
     foreach ($tables as $table) {
-        $DB->query("DROP TABLE IF EXISTS `$table`;");
+        if ($DB->tableExists($table)) {
+            $DB->doQuery("DROP TABLE IF EXISTS `" . $table . "`");
+        }
     }
-
 
     // delete notifications
     $n_template = new NotificationTemplate();
-    if ($template = $n_template->find("name = 'NEBackup errors'")) {
+    $template = $n_template->find("name = 'NEBackup errors'");
+    if (is_array($template) && !empty($template)) {
         $template = array_values($template);
 
         $n_templatetranslations = new NotificationTemplateTranslation();
-        if ($translation = $n_templatetranslations->find("notificationtemplates_id = " . $template[0]['id'])) {
+        $translation = $n_templatetranslations->find("notificationtemplates_id = " . $template[0]['id']);
+        if (is_array($translation) && !empty($translation)) {
             $translation = array_values($translation);
             $n_templatetranslations->delete(array('id' => $translation[0]['id']));
         }
@@ -191,7 +138,8 @@ function plugin_nebackup_uninstall() {
     }
 
     $notification = new Notification();
-    if ($notif = $notification->find("name = 'NEBackup errors'")) {
+    $notif = $notification->find("name = 'NEBackup errors'");
+    if (is_array($notif) && !empty($notif)) {
         $notif = array_values($notif);
         $notification->delete(array('id' => $notif[0]['id']));
     }
