@@ -1,0 +1,163 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Class Html referenced with incorrect case\: HTML\.$#'
+			identifier: class.nameCase
+			count: 3
+			path: front/config.form.php
+
+		-
+			message: '#^Call to an undefined static method Toolbox\:\:sendFile\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: front/download.form.php
+
+		-
+			message: '#^Class Html referenced with incorrect case\: HTML\.$#'
+			identifier: class.nameCase
+			count: 1
+			path: front/download.form.php
+
+		-
+			message: '#^Class Html referenced with incorrect case\: HTML\.$#'
+			identifier: class.nameCase
+			count: 4
+			path: front/entity.form.php
+
+		-
+			message: '#^Class Html referenced with incorrect case\: HTML\.$#'
+			identifier: class.nameCase
+			count: 3
+			path: front/networkequipment.form.php
+
+		-
+			message: '#^Call to an undefined static method Toolbox\:\:logInFile\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 5
+			path: inc/backup.class.php
+
+		-
+			message: '#^Instantiated class NetworkEquipment not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: inc/backup.class.php
+
+		-
+			message: '#^Undefined variable\: \$reg$#'
+			identifier: variable.undefined
+			count: 1
+			path: inc/backup.class.php
+
+		-
+			message: '#^Undefined variable\: \$where$#'
+			identifier: variable.undefined
+			count: 1
+			path: inc/backup.class.php
+
+		-
+			message: '#^Access to constant MODE_EXTERNAL on an unknown class CronTask\.$#'
+			identifier: class.notFound
+			count: 1
+			path: inc/config.class.php
+
+		-
+			message: '#^Call to static method Register\(\) on an unknown class CronTask\.$#'
+			identifier: class.notFound
+			count: 1
+			path: inc/config.class.php
+
+		-
+			message: '#^Class Html referenced with incorrect case\: HTML\.$#'
+			identifier: class.nameCase
+			count: 2
+			path: inc/config.class.php
+
+		-
+			message: '#^Instantiated class CronTask not found\.$#'
+			identifier: class.notFound
+			count: 3
+			path: inc/config.class.php
+
+		-
+			message: '#^Instantiated class NetworkEquipmentType not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: inc/config.class.php
+
+		-
+			message: '#^Instantiated class State not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: inc/config.class.php
+
+		-
+			message: '#^Method PluginNebackupConfig\:\:showFormNebackup\(\) should return bool but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: inc/config.class.php
+
+		-
+			message: '#^Call to static method getFormURLWithID\(\) on an unknown class CronTask\.$#'
+			identifier: class.notFound
+			count: 1
+			path: inc/entity.class.php
+
+		-
+			message: '#^Instantiated class CronTask not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: inc/entity.class.php
+
+		-
+			message: '#^Call to an undefined static method Plugin\:\:getInfo\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 2
+			path: inc/networkequipment.class.php
+
+		-
+			message: '#^Call to static method authDropdown\(\) on an unknown class PluginFusioninventoryConfigSecurity\.$#'
+			identifier: class.notFound
+			count: 2
+			path: inc/networkequipment.class.php
+
+		-
+			message: '#^Call to static method auth_dropdown\(\) on an unknown class PluginFusioninventoryConfigSecurity\.$#'
+			identifier: class.notFound
+			count: 2
+			path: inc/networkequipment.class.php
+
+		-
+			message: '#^Instantiated class CronTask not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: inc/networkequipment.class.php
+
+		-
+			message: '#^Method PluginNebackupNetworkEquipment\:\:showForm\(\) should return bool but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: inc/networkequipment.class.php
+
+		-
+			message: '#^Undefined variable\: \$sql$#'
+			identifier: variable.undefined
+			count: 1
+			path: inc/networkequipment.class.php
+
+		-
+			message: '#^Access to an undefined property PluginNebackupNotificationTargetBackup\:\:\$datas\.$#'
+			identifier: property.notFound
+			count: 1
+			path: inc/notificationtargetbackup.class.php
+
+		-
+			message: '#^Access to undefined constant PluginNebackupNotificationTargetBackup\:\:GLPI_USER\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: inc/notificationtargetbackup.class.php
+
+		-
+			message: '#^Call to an undefined method PluginNebackupNotificationTargetBackup\:\:formatURL\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: inc/notificationtargetbackup.class.php
