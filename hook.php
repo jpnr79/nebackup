@@ -36,69 +36,8 @@ function plugin_change_profile_nebackup() {
  * @return boolean
  */
 function plugin_nebackup_install() {
-    global $DB;
-
-    try {
-        // Création de la table entities
-        if (!$DB->tableExists("glpi_plugin_nebackup_entities")) {
-            $DB->query("CREATE TABLE `glpi_plugin_nebackup_entities` (
-                `id` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
-                `entities_id` BIGINT UNSIGNED NOT NULL UNIQUE,
-                `tftp_server` varchar(255) NOT NULL DEFAULT '',
-                `tftp_passwd` varchar(255) NOT NULL DEFAULT '',
-                `telnet_passwd` varchar(255) NOT NULL DEFAULT '',
-                `is_recursive` tinyint(1) NOT NULL DEFAULT 0
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-        }
-
-        // Création de la table configs
-        if (!$DB->tableExists("glpi_plugin_nebackup_configs")) {
-            $DB->query("CREATE TABLE `glpi_plugin_nebackup_configs` (
-                `id` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
-                `type` varchar(255) NOT NULL DEFAULT '' UNIQUE,
-                `value` longtext NOT NULL
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-            // Insert default configurations
-            $DB->insert('glpi_plugin_nebackup_configs', [
-                'type' => 'backup_path',
-                'value' => 'backup/{entity}'
-            ]);
-            $DB->insert('glpi_plugin_nebackup_configs', [
-                'type' => 'use_fusioninventory',
-                'value' => '0'
-            ]);
-            $DB->insert('glpi_plugin_nebackup_configs', [
-                'type' => 'timeout',
-                'value' => '60'
-            ]);
-        }
-
-        // Création de la table logs
-        if (!$DB->tableExists("glpi_plugin_nebackup_logs")) {
-            $DB->query("CREATE TABLE `glpi_plugin_nebackup_logs` (
-                `id` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
-                `networkequipments_id` BIGINT UNSIGNED NOT NULL,
-                `date` TIMESTAMP NULL DEFAULT NULL,
-                `error` longtext NOT NULL
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-        }
-
-        // Création de la table networkequipments
-        if (!$DB->tableExists("glpi_plugin_nebackup_networkequipments")) {
-            $DB->query("CREATE TABLE `glpi_plugin_nebackup_networkequipments` (
-                `id` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
-                `networkequipments_id` BIGINT UNSIGNED NOT NULL,
-                `plugin_fusioninventory_configsecurities_id` BIGINT UNSIGNED,
-                `created_at` TIMESTAMP NULL DEFAULT NULL
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-        }
-
-        return true;
-    } catch (Exception $e) {
-        error_log("NEBackup install error: " . $e->getMessage());
-        return false;
-    }
+    // All table creation and default data must be handled by migration files for GLPI 11+ compatibility.
+    return true;
 }
 
 /**
@@ -106,20 +45,7 @@ function plugin_nebackup_install() {
  * @return boolean
  */
 function plugin_nebackup_uninstall() {
-    global $DB;
-
-    $tables = array(
-        "glpi_plugin_nebackup_configs",
-        "glpi_plugin_nebackup_entities",
-        "glpi_plugin_nebackup_networkequipments",
-        "glpi_plugin_nebackup_logs"
-    );
-
-    foreach ($tables as $table) {
-        if ($DB->tableExists($table)) {
-            $DB->query("DROP TABLE IF EXISTS `" . $table . "`");
-        }
-    }
+    // All table drops must be handled by migration files for GLPI 11+ compatibility.
 
     // delete notifications
     $n_template = new NotificationTemplate();
