@@ -41,23 +41,23 @@ function plugin_nebackup_install() {
     try {
         // Création de la table entities
         if (!$DB->tableExists("glpi_plugin_nebackup_entities")) {
-            $DB->doQueryOrDie("CREATE TABLE `glpi_plugin_nebackup_entities` (
+            $DB->query("CREATE TABLE `glpi_plugin_nebackup_entities` (
                 `id` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
                 `entities_id` BIGINT UNSIGNED NOT NULL UNIQUE,
                 `tftp_server` varchar(255) NOT NULL DEFAULT '',
                 `tftp_passwd` varchar(255) NOT NULL DEFAULT '',
                 `telnet_passwd` varchar(255) NOT NULL DEFAULT '',
                 `is_recursive` tinyint(1) NOT NULL DEFAULT 0
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", $DB->error());
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         }
 
         // Création de la table configs
         if (!$DB->tableExists("glpi_plugin_nebackup_configs")) {
-            $DB->doQueryOrDie("CREATE TABLE `glpi_plugin_nebackup_configs` (
+            $DB->query("CREATE TABLE `glpi_plugin_nebackup_configs` (
                 `id` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
                 `type` varchar(255) NOT NULL DEFAULT '' UNIQUE,
                 `value` longtext NOT NULL
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", $DB->error());
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
             // Insert default configurations
             $DB->insert('glpi_plugin_nebackup_configs', [
@@ -76,22 +76,22 @@ function plugin_nebackup_install() {
 
         // Création de la table logs
         if (!$DB->tableExists("glpi_plugin_nebackup_logs")) {
-            $DB->doQueryOrDie("CREATE TABLE `glpi_plugin_nebackup_logs` (
+            $DB->query("CREATE TABLE `glpi_plugin_nebackup_logs` (
                 `id` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
                 `networkequipments_id` BIGINT UNSIGNED NOT NULL,
                 `date` TIMESTAMP NULL DEFAULT NULL,
                 `error` longtext NOT NULL
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", $DB->error());
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         }
 
         // Création de la table networkequipments
         if (!$DB->tableExists("glpi_plugin_nebackup_networkequipments")) {
-            $DB->doQueryOrDie("CREATE TABLE `glpi_plugin_nebackup_networkequipments` (
+            $DB->query("CREATE TABLE `glpi_plugin_nebackup_networkequipments` (
                 `id` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
                 `networkequipments_id` BIGINT UNSIGNED NOT NULL,
                 `plugin_fusioninventory_configsecurities_id` BIGINT UNSIGNED,
                 `created_at` TIMESTAMP NULL DEFAULT NULL
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", $DB->error());
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         }
 
         return true;
@@ -117,18 +117,18 @@ function plugin_nebackup_uninstall() {
 
     foreach ($tables as $table) {
         if ($DB->tableExists($table)) {
-            $DB->doQuery("DROP TABLE IF EXISTS `" . $table . "`");
+            $DB->query("DROP TABLE IF EXISTS `" . $table . "`");
         }
     }
 
     // delete notifications
     $n_template = new NotificationTemplate();
-    $template = $n_template->find("name = 'NEBackup errors'");
+    $template = $n_template->find(["name" => "NEBackup errors"]);
     if (is_array($template) && !empty($template)) {
         $template = array_values($template);
 
         $n_templatetranslations = new NotificationTemplateTranslation();
-        $translation = $n_templatetranslations->find("notificationtemplates_id = " . $template[0]['id']);
+        $translation = $n_templatetranslations->find(["notificationtemplates_id" => $template[0]['id']]);
         if (is_array($translation) && !empty($translation)) {
             $translation = array_values($translation);
             $n_templatetranslations->delete(array('id' => $translation[0]['id']));
@@ -138,7 +138,7 @@ function plugin_nebackup_uninstall() {
     }
 
     $notification = new Notification();
-    $notif = $notification->find("name = 'NEBackup errors'");
+    $notif = $notification->find(["name" => "NEBackup errors"]);
     if (is_array($notif) && !empty($notif)) {
         $notif = array_values($notif);
         $notification->delete(array('id' => $notif[0]['id']));
@@ -156,7 +156,7 @@ function plugin_item_purge_nebackup($params) {
         // delete the entity configuration and sub entities
         case 'entity':
             $config = new PluginNebackupEntity();
-            $data = array_values($config->find("entities_id = " . $params->getID()));  // search plugin entities id
+            $data = array_values($config->find(["entities_id" => $params->getID()]));  // search plugin entities id
             $config->setEntityData(array(
                 'id' => $data[0]['id'],
                 'purge' => true
