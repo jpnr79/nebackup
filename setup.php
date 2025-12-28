@@ -105,27 +105,42 @@ function plugin_init_nebackup() {
 
 /**
  * Fonction de définition de la version du plugin
- * @return type
+ * @return array
  */
 function plugin_version_nebackup() {
-    return array('name' => 'nebackup',
+    return array(
+        'name' => 'nebackup',
         'version' => '2.2.3',
         'author' => 'Javier Samaniego',
         'license' => 'AGPLv3+',
         'homepage' => 'https://github.com/jsamaniegog/nebackup',
-        'requirements' => ['glpi' => ['min' => '11.0', 'max' => '12.0']]);
+        'requirements' => ['glpi' => ['min' => '11.0', 'max' => '12.0']]
+    );
 }
 
 /**
  * Fonction de vérification des prérequis
- * @return boolean
+ * @return bool
  */
 function plugin_nebackup_check_prerequisites() {
-    if (version_compare(GLPI_VERSION, '9.4', 'lt')) {
-        _e('This plugin requires GLPI >= 9.4', 'nebackup');
+    // GLPI 11+ version check
+    $glpi_version = null;
+    $glpi_root = defined('GLPI_ROOT') ? GLPI_ROOT : realpath(__DIR__ . '/../..');
+    $version_dir = $glpi_root . '/version';
+    if (is_dir($version_dir)) {
+        $files = scandir($version_dir, SCANDIR_SORT_DESCENDING);
+        foreach ($files as $file) {
+            if ($file[0] !== '.' && preg_match('/^\d+\.\d+\.\d+$/', $file)) {
+                $glpi_version = $file;
+                break;
+            }
+        }
+    }
+    $min_version = '11.0.0';
+    if ($glpi_version === null || version_compare($glpi_version, $min_version, '<')) {
+        echo __('This plugin requires GLPI >= ', 'nebackup') . $min_version;
         return false;
     }
-
     return true;
 }
 
@@ -133,8 +148,8 @@ function plugin_nebackup_check_prerequisites() {
  * Fonction de vérification de la configuration initiale
  * Uninstall process for plugin : need to return true if succeeded
  * may display messages or add to message after redirect.
- * @param type $verbose
- * @return boolean
+ * @param bool $verbose
+ * @return bool
  */
 function plugin_nebackup_check_config($verbose = false) {
     // check here
@@ -143,7 +158,7 @@ function plugin_nebackup_check_config($verbose = false) {
     }
 
     if ($verbose) {
-        _e('Installed / not configured', 'nebackup');
+        echo __('Installed / not configured', 'nebackup');
     }
 
     return false;
