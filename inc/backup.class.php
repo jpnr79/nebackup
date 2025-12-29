@@ -172,8 +172,14 @@ class PluginNebackupBackup extends CommonDBTM {
         
         foreach ($ne_to_backup as $reg) {
 
-            if (PluginNebackupConfig::DEBUG_NEBACKUP)
-                Toolbox::logInFile("nebackup", "Start copy: " . print_r($reg, true));
+            if (PluginNebackupConfig::DEBUG_NEBACKUP) {
+                $__msg = "Start copy: " . print_r($reg, true);
+                if (class_exists('Toolbox') && method_exists('Toolbox', 'logInFile')) {
+                    Toolbox::logInFile('nebackup', $__msg);
+                } else {
+                    error_log('[nebackup] ' . $__msg);
+                }
+            }
 
             // datos de conexión al servidor (es el mismo para todos los registros)
             $server = $reg['server'];
@@ -301,8 +307,14 @@ class PluginNebackupBackup extends CommonDBTM {
                                 . "protocol configured.", "nebackup");
 
                             // debug
-                            if (PluginNebackupConfig::DEBUG_NEBACKUP)
-                                Toolbox::logInFile("nebackup", "Error: $error\r" . print_r($reg, true));
+                            if (PluginNebackupConfig::DEBUG_NEBACKUP) {
+                                $__msg = "Error: $error\r" . print_r($reg, true);
+                                if (class_exists('Toolbox') && method_exists('Toolbox', 'logInFile')) {
+                                    Toolbox::logInFile('nebackup', $__msg);
+                                } else {
+                                    error_log('[nebackup] ' . $__msg);
+                                }
+                            }
 
                             break;
                         }
@@ -400,8 +412,14 @@ class PluginNebackupBackup extends CommonDBTM {
             }
 
             // debug
-            if (PluginNebackupConfig::DEBUG_NEBACKUP)
-                Toolbox::logInFile("nebackup", "Finish copy: " . print_r($reg, true));
+            if (PluginNebackupConfig::DEBUG_NEBACKUP) {
+                $__msg = "Finish copy: " . print_r($reg, true);
+                if (class_exists('Toolbox') && method_exists('Toolbox', 'logInFile')) {
+                    Toolbox::logInFile('nebackup', $__msg);
+                } else {
+                    error_log('[nebackup] ' . $__msg);
+                }
+            }
         }
     }
 
@@ -427,8 +445,14 @@ class PluginNebackupBackup extends CommonDBTM {
         $server, $community, $manufacturer, $entitie_name, $protocol = 1, 
         $username = "admin", $password = "admin", $create_directories = 0
     ) {
-        if (PluginNebackupConfig::DEBUG_NEBACKUP)
-            Toolbox::logInFile("nebackup", "Script: " . "nebackup_" . $manufacturer . "_$num_script.sh\r");
+        if (PluginNebackupConfig::DEBUG_NEBACKUP) {
+            $__msg = "Script: " . "nebackup_" . $manufacturer . "_$num_script.sh\r";
+            if (class_exists('Toolbox') && method_exists('Toolbox', 'logInFile')) {
+                Toolbox::logInFile('nebackup', $__msg);
+            } else {
+                error_log('[nebackup] ' . $__msg);
+            }
+        }
 
         $host = self::escapeName($host);
         $path = PluginNebackupConfig::getBackupPath(true, $manufacturer, $entitie_name);
@@ -440,8 +464,14 @@ class PluginNebackupBackup extends CommonDBTM {
         }
         
         $comando = "sh " . GLPI_ROOT . "/plugins/nebackup/commands/nebackup_" . $manufacturer . "_$num_script.sh $host $ip $rannum $server $community $protocol $username $password";
-        if (PluginNebackupConfig::DEBUG_NEBACKUP)
-            Toolbox::logInFile("nebackup", "Comando ejecutado: $comando\r" . print_r($reg, true));
+        if (PluginNebackupConfig::DEBUG_NEBACKUP) {
+            $__msg = "Comando ejecutado: $comando\r" . print_r($reg, true);
+            if (class_exists('Toolbox') && method_exists('Toolbox', 'logInFile')) {
+                Toolbox::logInFile('nebackup', $__msg);
+            } else {
+                error_log('[nebackup] ' . $__msg);
+            }
+        }
         $resultado = `$comando`;
 
         return $resultado;
